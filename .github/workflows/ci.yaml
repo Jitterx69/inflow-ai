@@ -1,0 +1,70 @@
+# Fail-Fast CI Pipeline
+# Purpose: Lint and validate PRs before merge
+# NO DEPLOYMENTS - NO SECRETS
+
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+      - ml
+      - services
+      - platform
+
+jobs:
+  lint:
+    name: Lint & Validate
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install linters
+        run: |
+          pip install --upgrade pip
+          pip install ruff yamllint
+
+      - name: Lint Python files
+        run: |
+          if find . -name "*.py" -type f | grep -q .; then
+            echo "Python files found, running ruff..."
+            ruff check . --output-format=github
+          else
+            echo "No Python files found, skipping..."
+          fi
+
+      - name: Lint YAML files
+        run: |
+          yamllint -d "{extends: relaxed, rules: {line-length: {max: 200}}}" .
+        continue-on-error: true
+
+      - name: Validate Kubernetes manifests
+        run: |
+          if find . -path "./infra/kubernetes/*.yaml" -type f | grep -q .; then
+            echo "Kubernetes manifests found"
+            # Basic YAML validation only - no kubectl apply
+            for f in $(find ./infra/kubernetes -name "*.yaml" -type f); do
+              echo "Validating: $f"
+              python -c "import yaml; yaml.safe_load(open('$f'))" || exit 1
+            done
+          else
+            echo "No Kubernetes manifests found, skipping..."
+          fi
+
+      - name: Check for secrets in code
+        run: |
+          # Simple check for potential secret patterns
+          if grep -rE "(password|secret|api_key|token)\s*=\s*['\"][^'\"]+['\"]" --include="*.py" --include="*.yaml" --include="*.yml" . 2>/dev/null; then
+            echo "::error::Potential hardcoded secrets detected!"
+            exit 1
+          else
+            echo "No hardcoded secrets detected"
+          fi

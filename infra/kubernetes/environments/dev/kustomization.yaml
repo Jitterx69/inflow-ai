@@ -1,0 +1,17 @@
+# Kustomization - Development Environment
+# Placeholder — DO NOT DEPLOY YET
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base/namespaces.yaml
+  - ../../base/resource-quotas.yaml
+  - ../../base/network-policies.yaml
+
+namespace: inflow-dev
+
+commonLabels:
+  environment: dev
+
+# Dev-specific patches will go here
+patches: []

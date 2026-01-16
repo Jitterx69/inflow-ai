@@ -1,0 +1,17 @@
+# Kustomization - Staging Environment
+# Placeholder — DO NOT DEPLOY YET
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base/namespaces.yaml
+  - ../../base/resource-quotas.yaml
+  - ../../base/network-policies.yaml
+
+namespace: inflow-staging
+
+commonLabels:
+  environment: staging
+
+# Staging-specific patches will go here
+patches: []
