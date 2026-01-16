@@ -1,0 +1,36 @@
+# Kubernetes Namespaces
+# Placeholder — DO NOT DEPLOY YET
+# Purpose: Define namespace isolation for workloads
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: inflow-ml
+  labels:
+    team: ml
+    environment: placeholder
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: inflow-services
+  labels:
+    team: services
+    environment: placeholder
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: inflow-platform
+  labels:
+    team: platform
+    environment: placeholder
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: inflow-observability
+  labels:
+    team: platform
+    environment: placeholder

@@ -1,0 +1,18 @@
+# Kustomization - Production Environment
+# Placeholder — DO NOT DEPLOY YET
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base/namespaces.yaml
+  - ../../base/resource-quotas.yaml
+  - ../../base/network-policies.yaml
+
+namespace: inflow-prod
+
+commonLabels:
+  environment: prod
+
+# Production-specific patches will go here
+# IMPORTANT: Requires additional review before any changes
+patches: []
