@@ -1,0 +1,51 @@
+# Triton Model Configuration
+name: "inflow_baseline"
+platform: "xgboost"
+max_batch_size: 64
+
+input [
+  {
+    name: "input__0"
+    data_type: TYPE_FP32
+    dims: [ 6 ]  # 6 features
+  }
+]
+
+output [
+  {
+    name: "output__0"
+    data_type: TYPE_FP32
+    dims: [ 4 ]  # 4 classes
+  }
+]
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_CPU
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 16, 32, 64 ]
+  max_queue_delay_microseconds: 100
+}
+
+# Version policy
+version_policy: { latest { num_versions: 2 }}
+
+# Model warmup
+model_warmup [
+  {
+    name: "warmup_request"
+    batch_size: 1
+    inputs {
+      key: "input__0"
+      value: {
+        data_type: TYPE_FP32
+        dims: [ 6 ]
+        zero_data: true
+      }
+    }
+  }
+]

@@ -1,0 +1,11 @@
+# Shared ConfigMaps
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  KAFKA_BOOTSTRAP_SERVERS: "redpanda:9092"
+  MLFLOW_TRACKING_URI: "http://mlflow:5000"
+  FEATURE_STORE_URL: "http://feast:6566"
+  CONFIDENCE_THRESHOLD: "0.7"

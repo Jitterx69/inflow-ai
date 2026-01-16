@@ -1,0 +1,58 @@
+# Dev Environment Values
+# Applied via Kustomize overlay
+
+environment: dev
+namespace: inflow-dev
+
+# Replicas (minimal for dev)
+replicas:
+  ingestion: 1
+  feature-service: 1
+  inference-service: 1
+  decision-engine: 1
+
+# Resources (constrained for dev)
+resources:
+  default:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  inference:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+# Feature flags
+features:
+  auth_required: false
+  mtls_enabled: false
+  rate_limiting: false
+  model_canary: false
+
+# Endpoints
+endpoints:
+  kafka: redpanda.inflow-dev.svc:9092
+  mlflow: mlflow.inflow-dev.svc:5000
+  feature_store: feast.inflow-dev.svc:6566
+  vault: vault.inflow-dev.svc:8200
+
+# Model config
+model:
+  version: latest
+  registry: mlflow
+
+# Logging
+logging:
+  level: DEBUG
+  format: json
+
+# Monitoring
+monitoring:
+  enabled: true
+  scrape_interval: 30s

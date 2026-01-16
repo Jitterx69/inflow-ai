@@ -1,17 +1,44 @@
-# Kustomization - Development Environment
-# Placeholder — DO NOT DEPLOY YET
+# Kustomization - Dev Environment
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
+namespace: inflow-dev
 
 resources:
   - ../../base/namespaces.yaml
   - ../../base/resource-quotas.yaml
   - ../../base/network-policies.yaml
+  - ../../components/services/
+  - ../../components/observability/
 
-namespace: inflow-dev
+configMapGenerator:
+  - name: env-config
+    literals:
+      - ENVIRONMENT=dev
+      - LOG_LEVEL=DEBUG
+      - AUTH_REQUIRED=false
+      - MTLS_ENABLED=false
 
 commonLabels:
   environment: dev
+  managed-by: kustomize
 
-# Dev-specific patches will go here
-patches: []
+replicas:
+  - name: ingestion
+    count: 1
+  - name: feature-service
+    count: 1
+  - name: inference-service
+    count: 1
+  - name: decision-engine
+    count: 1
+
+images:
+  - name: inflow-ingestion
+    newTag: dev
+  - name: inflow-feature-service
+    newTag: dev
+  - name: inflow-inference-service
+    newTag: dev
+  - name: inflow-decision-engine
+    newTag: dev

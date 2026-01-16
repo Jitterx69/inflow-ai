@@ -1,0 +1,67 @@
+# KServe InferenceService for Inflow Model
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: inflow-baseline
+  labels:
+    app: inflow-model
+    model: baseline
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 3
+    scaleTarget: 80
+    scaleMetric: concurrency
+    
+    # XGBoost runtime
+    xgboost:
+      storageUri: "s3://models/baseline/v1"
+      runtimeVersion: "v0.8.0"
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+      
+    # Canary configuration
+    canaryTrafficPercent: 0
+    
+  transformer:
+    minReplicas: 1
+    containers:
+      - name: transformer
+        image: inflow-transformer:latest
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+---
+# Canary InferenceService for A/B testing
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: inflow-baseline-canary
+  labels:
+    app: inflow-model
+    model: baseline
+    variant: canary
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 1
+    
+    xgboost:
+      storageUri: "s3://models/baseline/canary"
+      runtimeVersion: "v0.8.0"
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi

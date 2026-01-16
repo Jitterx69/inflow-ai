@@ -1,17 +1,45 @@
 # Kustomization - Staging Environment
-# Placeholder — DO NOT DEPLOY YET
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
+namespace: inflow-staging
 
 resources:
   - ../../base/namespaces.yaml
   - ../../base/resource-quotas.yaml
   - ../../base/network-policies.yaml
+  - ../../components/services/
+  - ../../components/observability/
+  - ../../components/security/
 
-namespace: inflow-staging
+configMapGenerator:
+  - name: env-config
+    literals:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=INFO
+      - AUTH_REQUIRED=true
+      - MTLS_ENABLED=true
 
 commonLabels:
   environment: staging
+  managed-by: kustomize
 
-# Staging-specific patches will go here
-patches: []
+replicas:
+  - name: ingestion
+    count: 2
+  - name: feature-service
+    count: 2
+  - name: inference-service
+    count: 2
+  - name: decision-engine
+    count: 2
+
+images:
+  - name: inflow-ingestion
+    newTag: staging
+  - name: inflow-feature-service
+    newTag: staging
+  - name: inflow-inference-service
+    newTag: staging
+  - name: inflow-decision-engine
+    newTag: staging

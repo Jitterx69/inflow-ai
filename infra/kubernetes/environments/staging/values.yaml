@@ -1,0 +1,64 @@
+# Staging Environment Values
+# Applied via Kustomize overlay
+
+environment: staging
+namespace: inflow-staging
+
+# Replicas (production-like)
+replicas:
+  ingestion: 2
+  feature-service: 2
+  inference-service: 2
+  decision-engine: 2
+
+# Resources (production-like)
+resources:
+  default:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  inference:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
+# Feature flags
+features:
+  auth_required: true
+  mtls_enabled: true
+  rate_limiting: true
+  model_canary: true
+
+# Endpoints
+endpoints:
+  kafka: redpanda.inflow-staging.svc:9092
+  mlflow: mlflow.inflow-staging.svc:5000
+  feature_store: feast.inflow-staging.svc:6566
+  vault: vault.inflow-staging.svc:8200
+
+# Model config
+model:
+  version: pinned  # Must specify exact version
+  registry: mlflow
+
+# Logging
+logging:
+  level: INFO
+  format: json
+
+# Monitoring
+monitoring:
+  enabled: true
+  scrape_interval: 15s
+
+# Security
+security:
+  keycloak_realm: inflow-staging
+  vault_path: secret/staging
+  opa_enabled: true

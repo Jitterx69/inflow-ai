@@ -1,0 +1,57 @@
+# Service Kubernetes Services
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingestion
+  labels:
+    app: ingestion
+spec:
+  selector:
+    app: ingestion
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: feature-service
+  labels:
+    app: feature-service
+spec:
+  selector:
+    app: feature-service
+  ports:
+    - port: 8002
+      targetPort: 8002
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inference-service
+  labels:
+    app: inference-service
+spec:
+  selector:
+    app: inference-service
+  ports:
+    - port: 8001
+      targetPort: 8001
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: decision-engine
+  labels:
+    app: decision-engine
+spec:
+  selector:
+    app: decision-engine
+  ports:
+    - port: 8003
+      targetPort: 8003
+      name: http

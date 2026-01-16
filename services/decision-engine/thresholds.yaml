@@ -1,0 +1,43 @@
+# Decision Engine Confidence Thresholds
+# Version: v1
+
+thresholds:
+  # Minimum confidence to auto-execute decision
+  auto_execute: 0.85
+  
+  # Confidence range requiring human review
+  human_review:
+    min: 0.5
+    max: 0.85
+  
+  # Below this, route to manual queue
+  manual_queue: 0.5
+
+# Per-action thresholds (override defaults)
+actions:
+  SEND_REMINDER:
+    auto_execute: 0.80
+  CALL_CUSTOMER:
+    auto_execute: 0.75
+  ESCALATE_TO_AGENT:
+    auto_execute: 0.60  # Lower threshold OK, agent reviews anyway
+  OFFER_PAYMENT_PLAN:
+    auto_execute: 0.85
+  INITIATE_LEGAL:
+    auto_execute: 0.95  # High confidence required
+    human_review_required: true
+  WRITE_OFF:
+    auto_execute: 0.95
+    human_review_required: true
+
+# Safe-fail defaults
+safe_fail:
+  default_action: "ESCALATE_TO_AGENT"
+  default_priority: 1
+  log_reason: true
+
+# Business rules
+rules:
+  high_balance_threshold: 10000
+  max_contact_attempts: 15
+  account_age_minimum_months: 3

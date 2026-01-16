@@ -1,0 +1,112 @@
+{
+    "realm": "inflow",
+    "enabled": true,
+    "displayName": "Inflow AI Platform",
+    "sslRequired": "external",
+    "registrationAllowed": false,
+    "loginWithEmailAllowed": true,
+    "duplicateEmailsAllowed": false,
+    "resetPasswordAllowed": true,
+    "editUsernameAllowed": false,
+    "bruteForceProtected": true,
+    "roles": {
+        "realm": [
+            {
+                "name": "ml-engineer",
+                "description": "ML team member - access to ML pipelines and model registry"
+            },
+            {
+                "name": "backend-dev",
+                "description": "Backend developer - access to services and APIs"
+            },
+            {
+                "name": "platform-admin",
+                "description": "Platform administrator - full infrastructure access"
+            },
+            {
+                "name": "viewer",
+                "description": "Read-only access to dashboards and metrics"
+            },
+            {
+                "name": "service-account",
+                "description": "Service-to-service authentication"
+            }
+        ]
+    },
+    "clients": [
+        {
+            "clientId": "inflow-api",
+            "name": "Inflow API Gateway",
+            "enabled": true,
+            "clientAuthenticatorType": "client-secret",
+            "secret": "REPLACE_WITH_VAULT_SECRET",
+            "bearerOnly": false,
+            "consentRequired": false,
+            "standardFlowEnabled": false,
+            "implicitFlowEnabled": false,
+            "directAccessGrantsEnabled": false,
+            "serviceAccountsEnabled": true,
+            "publicClient": false,
+            "protocol": "openid-connect",
+            "defaultClientScopes": [
+                "openid",
+                "profile",
+                "email",
+                "roles"
+            ]
+        },
+        {
+            "clientId": "inflow-ml",
+            "name": "ML Platform Services",
+            "enabled": true,
+            "clientAuthenticatorType": "client-secret",
+            "secret": "REPLACE_WITH_VAULT_SECRET",
+            "bearerOnly": false,
+            "serviceAccountsEnabled": true,
+            "publicClient": false,
+            "protocol": "openid-connect"
+        },
+        {
+            "clientId": "inflow-ui",
+            "name": "Inflow Dashboard",
+            "enabled": true,
+            "publicClient": true,
+            "standardFlowEnabled": true,
+            "implicitFlowEnabled": false,
+            "directAccessGrantsEnabled": false,
+            "protocol": "openid-connect",
+            "redirectUris": [
+                "http://localhost:3000/*",
+                "https://dashboard.dev.inflow.ai/*",
+                "https://dashboard.staging.inflow.ai/*"
+            ],
+            "webOrigins": [
+                "*"
+            ]
+        }
+    ],
+    "defaultDefaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "roles"
+    ],
+    "users": [
+        {
+            "username": "admin",
+            "enabled": true,
+            "email": "admin@inflow.ai",
+            "emailVerified": true,
+            "realmRoles": [
+                "platform-admin"
+            ],
+            "credentials": [
+                {
+                    "type": "password",
+                    "temporary": true,
+                    "value": "CHANGE_ME"
+                }
+            ]
+        }
+    ]
+}
