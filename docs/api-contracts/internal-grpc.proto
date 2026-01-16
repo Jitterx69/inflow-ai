@@ -1,0 +1,184 @@
+// Inflow AI - Internal Service Communication
+// Version: v1
+// Breaking changes require new version
+
+syntax = "proto3";
+
+package inflow.internal.v1;
+
+option go_package = "github.com/inflow-ai/inflow/internal/v1";
+
+// ============================================================================
+// Common Types
+// ============================================================================
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+  }
+  ServingStatus status = 1;
+  string version = 2;
+}
+
+message FeatureVector {
+  string account_id = 1;
+  int32 days_past_due = 2;
+  double outstanding_balance = 3;
+  double payment_history_score = 4;
+  int32 contact_attempts = 5;
+  int32 last_payment_days_ago = 6;
+  int32 account_age_months = 7;
+}
+
+// ============================================================================
+// Ingestion Service
+// ============================================================================
+
+service IngestionService {
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc IngestEvent(IngestEventRequest) returns (IngestEventResponse);
+  rpc IngestBatch(IngestBatchRequest) returns (IngestBatchResponse);
+}
+
+message IngestEventRequest {
+  string event_id = 1;
+  string event_type = 2;
+  string account_id = 3;
+  bytes payload = 4;
+  int64 timestamp_ms = 5;
+}
+
+message IngestEventResponse {
+  bool success = 1;
+  string event_id = 2;
+  string error = 3;
+}
+
+message IngestBatchRequest {
+  repeated IngestEventRequest events = 1;
+}
+
+message IngestBatchResponse {
+  int32 success_count = 1;
+  int32 failure_count = 2;
+  repeated string failed_event_ids = 3;
+}
+
+// ============================================================================
+// Feature Service (Internal)
+// ============================================================================
+
+service FeatureService {
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc GetFeatures(GetFeaturesRequest) returns (GetFeaturesResponse);
+  rpc GetFeaturesBatch(GetFeaturesBatchRequest) returns (GetFeaturesBatchResponse);
+}
+
+message GetFeaturesRequest {
+  string account_id = 1;
+  repeated string feature_names = 2;  // Empty = all features
+}
+
+message GetFeaturesResponse {
+  FeatureVector features = 1;
+  int64 computed_at_ms = 2;
+  bool cache_hit = 3;
+}
+
+message GetFeaturesBatchRequest {
+  repeated string account_ids = 1;
+  repeated string feature_names = 2;
+}
+
+message GetFeaturesBatchResponse {
+  repeated GetFeaturesResponse results = 1;
+  repeated string not_found = 2;
+}
+
+// ============================================================================
+// Inference Service (Internal)
+// ============================================================================
+
+service InferenceService {
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc Predict(PredictRequest) returns (PredictResponse);
+  rpc PredictBatch(PredictBatchRequest) returns (PredictBatchResponse);
+}
+
+message PredictRequest {
+  string request_id = 1;
+  FeatureVector features = 2;
+  string model_version = 3;  // Optional, empty = latest
+}
+
+message PredictResponse {
+  string request_id = 1;
+  Prediction prediction = 2;
+  string model_version = 3;
+  int64 inference_time_us = 4;
+}
+
+message Prediction {
+  enum Label {
+    UNKNOWN = 0;
+    RECOVER = 1;
+    ESCALATE = 2;
+    WRITE_OFF = 3;
+    MONITOR = 4;
+  }
+  Label label = 1;
+  double confidence = 2;
+  map<string, double> probabilities = 3;
+}
+
+message PredictBatchRequest {
+  repeated PredictRequest requests = 1;
+}
+
+message PredictBatchResponse {
+  repeated PredictResponse results = 1;
+  int64 total_time_us = 2;
+}
+
+// ============================================================================
+// Decision Engine (Internal)
+// ============================================================================
+
+service DecisionService {
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc MakeDecision(DecisionRequest) returns (DecisionResponse);
+}
+
+message DecisionRequest {
+  string request_id = 1;
+  string account_id = 2;
+  Prediction prediction = 3;
+  FeatureVector features = 4;
+}
+
+message DecisionResponse {
+  string request_id = 1;
+  string account_id = 2;
+  Decision decision = 3;
+  repeated string applied_rules = 4;
+}
+
+message Decision {
+  enum Action {
+    NO_ACTION = 0;
+    SEND_REMINDER = 1;
+    CALL_CUSTOMER = 2;
+    ESCALATE_TO_AGENT = 3;
+    OFFER_PAYMENT_PLAN = 4;
+    INITIATE_LEGAL = 5;
+    WRITE_OFF = 6;
+  }
+  Action action = 1;
+  int32 priority = 2;
+  string reason = 3;
+  map<string, string> metadata = 4;
+}

@@ -1,0 +1,232 @@
+openapi: 3.0.3
+info:
+  title: Inflow AI - Inference API
+  description: |
+    ML inference endpoints for the Inflow AI platform.
+    
+    ## Versioning
+    - Current: v1
+    - Breaking changes require new version
+  version: "1.0.0"
+  contact:
+    name: ML Team
+    email: ml@inflow.ai
+
+servers:
+  - url: http://localhost:8001
+    description: Local development
+  - url: https://inference.dev.inflow.ai
+    description: Development
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      tags: [System]
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /v1/predict:
+    post:
+      summary: Run inference on input features
+      operationId: predict
+      tags: [Inference]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PredictRequest"
+      responses:
+        "200":
+          description: Prediction result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Model not loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/predict/batch:
+    post:
+      summary: Batch inference
+      operationId: predictBatch
+      tags: [Inference]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchPredictRequest"
+      responses:
+        "200":
+          description: Batch prediction results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchPredictResponse"
+
+  /v1/explain:
+    post:
+      summary: Get prediction explanation (SHAP values)
+      operationId: explain
+      tags: [Explainability]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PredictRequest"
+      responses:
+        "200":
+          description: Explanation with feature importance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExplainResponse"
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, model_loaded]
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        model_loaded:
+          type: boolean
+        model_version:
+          type: string
+        latency_p99_ms:
+          type: number
+
+    PredictRequest:
+      type: object
+      required: [request_id, features]
+      properties:
+        request_id:
+          type: string
+          format: uuid
+        features:
+          $ref: "#/components/schemas/FeatureVector"
+        model_version:
+          type: string
+          description: Optional specific model version
+
+    FeatureVector:
+      type: object
+      required: [account_id]
+      properties:
+        account_id:
+          type: string
+        days_past_due:
+          type: integer
+          minimum: 0
+        outstanding_balance:
+          type: number
+          minimum: 0
+        payment_history_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        contact_attempts:
+          type: integer
+          minimum: 0
+        last_payment_days_ago:
+          type: integer
+          minimum: 0
+        account_age_months:
+          type: integer
+          minimum: 0
+
+    PredictResponse:
+      type: object
+      required: [request_id, prediction, confidence, model_version]
+      properties:
+        request_id:
+          type: string
+        prediction:
+          type: string
+          enum: [recover, escalate, write_off, monitor]
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        model_version:
+          type: string
+        inference_time_ms:
+          type: number
+
+    BatchPredictRequest:
+      type: object
+      required: [requests]
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/PredictRequest"
+          maxItems: 100
+
+    BatchPredictResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/PredictResponse"
+        total_time_ms:
+          type: number
+
+    ExplainResponse:
+      type: object
+      required: [request_id, prediction, feature_importance]
+      properties:
+        request_id:
+          type: string
+        prediction:
+          type: string
+        confidence:
+          type: number
+        feature_importance:
+          type: array
+          items:
+            type: object
+            properties:
+              feature:
+                type: string
+              value:
+                type: number
+              shap_value:
+                type: number
+              contribution:
+                type: string
+                enum: [positive, negative, neutral]
+
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        request_id:
+          type: string

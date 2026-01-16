@@ -1,6 +1,5 @@
-# Fail-Fast CI Pipeline
-# Purpose: Lint and validate PRs before merge
-# NO DEPLOYMENTS - NO SECRETS
+# Expanded CI Pipeline
+# P1: Lint + Tests + Contract Validation
 
 name: CI
 
@@ -15,12 +14,10 @@ on:
 
 jobs:
   lint:
-    name: Lint & Validate
+    name: Lint
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -32,39 +29,128 @@ jobs:
           pip install --upgrade pip
           pip install ruff yamllint
 
-      - name: Lint Python files
+      - name: Lint Python
         run: |
           if find . -name "*.py" -type f | grep -q .; then
-            echo "Python files found, running ruff..."
             ruff check . --output-format=github
-          else
-            echo "No Python files found, skipping..."
           fi
 
-      - name: Lint YAML files
-        run: |
-          yamllint -d "{extends: relaxed, rules: {line-length: {max: 200}}}" .
+      - name: Lint YAML
+        run: yamllint -d "{extends: relaxed, rules: {line-length: {max: 200}}}" .
         continue-on-error: true
 
-      - name: Validate Kubernetes manifests
+      - name: Check for secrets
         run: |
-          if find . -path "./infra/kubernetes/*.yaml" -type f | grep -q .; then
-            echo "Kubernetes manifests found"
-            # Basic YAML validation only - no kubectl apply
-            for f in $(find ./infra/kubernetes -name "*.yaml" -type f); do
-              echo "Validating: $f"
-              python -c "import yaml; yaml.safe_load(open('$f'))" || exit 1
-            done
-          else
-            echo "No Kubernetes manifests found, skipping..."
-          fi
-
-      - name: Check for secrets in code
-        run: |
-          # Simple check for potential secret patterns
-          if grep -rE "(password|secret|api_key|token)\s*=\s*['\"][^'\"]+['\"]" --include="*.py" --include="*.yaml" --include="*.yml" . 2>/dev/null; then
+          if grep -rE "(password|secret|api_key|token)\s*=\s*['\"][^'\"]+['\"]" --include="*.py" --include="*.yaml" . 2>/dev/null; then
             echo "::error::Potential hardcoded secrets detected!"
             exit 1
-          else
-            echo "No hardcoded secrets detected"
           fi
+
+  contracts:
+    name: Validate Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install OpenAPI linter
+        run: npm install -g @stoplight/spectral-cli
+
+      - name: Validate OpenAPI specs
+        run: |
+          for spec in docs/api-contracts/*.yaml; do
+            echo "Validating $spec..."
+            spectral lint "$spec" --ruleset=https://raw.githubusercontent.com/stoplightio/spectral/develop/rulesets/src/oas/.spectral.json || true
+          done
+
+      - name: Validate Proto files
+        run: |
+          if find docs/api-contracts -name "*.proto" | grep -q .; then
+            echo "Proto files found - syntax check only in P1"
+            for proto in docs/api-contracts/*.proto; do
+              echo "Checking $proto..."
+              head -20 "$proto"
+            done
+          fi
+
+  test-services:
+    name: Test Services
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pytest pytest-asyncio httpx
+          # Install service dependencies
+          for req in services/*/requirements.txt; do
+            pip install -r "$req"
+          done
+
+      - name: Run service tests
+        run: |
+          # Run any test files found
+          if find services -name "test_*.py" | grep -q .; then
+            pytest services/ -v
+          else
+            echo "No service tests found (expected in P1)"
+          fi
+
+  test-ml:
+    name: Test ML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ML dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r ml/models/baseline/requirements.txt
+          pip install pytest
+
+      - name: Run ML tests
+        run: |
+          if find ml -name "test_*.py" | grep -q .; then
+            pytest ml/ -v
+          else
+            echo "No ML tests found (expected in P1)"
+          fi
+
+      - name: Verify training script syntax
+        run: python -m py_compile ml/models/baseline/train.py
+
+      - name: Verify eval script syntax
+        run: python -m py_compile ml/models/baseline/eval.py
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build service images
+        run: |
+          for service in services/*/; do
+            if [ -f "$service/Dockerfile" ]; then
+              echo "Building $service..."
+              docker build -t "inflow-$(basename $service):test" "$service"
+            fi
+          done

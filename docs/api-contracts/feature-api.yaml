@@ -1,0 +1,213 @@
+openapi: 3.0.3
+info:
+  title: Inflow AI - Feature API
+  description: |
+    Feature service endpoints for the Inflow AI platform.
+    
+    ## Versioning
+    - Current: v1
+    - Breaking changes require new version
+  version: "1.0.0"
+  contact:
+    name: Services Team
+    email: services@inflow.ai
+
+servers:
+  - url: http://localhost:8002
+    description: Local development
+  - url: https://features.dev.inflow.ai
+    description: Development
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      tags: [System]
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /v1/features/{account_id}:
+    get:
+      summary: Get features for an account
+      operationId: getFeatures
+      tags: [Features]
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: feature_set
+          in: query
+          schema:
+            type: string
+            enum: [all, inference, reporting]
+            default: inference
+      responses:
+        "200":
+          description: Feature vector
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeatureResponse"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/features/batch:
+    post:
+      summary: Get features for multiple accounts
+      operationId: getFeaturesBatch
+      tags: [Features]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchFeatureRequest"
+      responses:
+        "200":
+          description: Batch feature vectors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchFeatureResponse"
+
+  /v1/features/{account_id}/history:
+    get:
+      summary: Get feature history for an account
+      operationId: getFeatureHistory
+      tags: [Features]
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+            maximum: 365
+      responses:
+        "200":
+          description: Feature history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeatureHistoryResponse"
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        feature_store_connected:
+          type: boolean
+        cache_hit_rate:
+          type: number
+
+    FeatureResponse:
+      type: object
+      required: [account_id, features, computed_at]
+      properties:
+        account_id:
+          type: string
+        features:
+          $ref: "#/components/schemas/FeatureVector"
+        computed_at:
+          type: string
+          format: date-time
+        cache_hit:
+          type: boolean
+
+    FeatureVector:
+      type: object
+      properties:
+        days_past_due:
+          type: integer
+        outstanding_balance:
+          type: number
+        payment_history_score:
+          type: number
+        contact_attempts:
+          type: integer
+        last_payment_days_ago:
+          type: integer
+        account_age_months:
+          type: integer
+        total_payments_made:
+          type: integer
+        average_payment_amount:
+          type: number
+        missed_payment_count:
+          type: integer
+        credit_utilization:
+          type: number
+
+    BatchFeatureRequest:
+      type: object
+      required: [account_ids]
+      properties:
+        account_ids:
+          type: array
+          items:
+            type: string
+          maxItems: 100
+        feature_set:
+          type: string
+          enum: [all, inference, reporting]
+          default: inference
+
+    BatchFeatureResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeatureResponse"
+        not_found:
+          type: array
+          items:
+            type: string
+
+    FeatureHistoryResponse:
+      type: object
+      required: [account_id, history]
+      properties:
+        account_id:
+          type: string
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              features:
+                $ref: "#/components/schemas/FeatureVector"
+
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string

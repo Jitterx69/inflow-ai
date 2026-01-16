@@ -1,0 +1,57 @@
+# Baseline Model Configuration
+# Version: v1.0.0
+
+model:
+  name: "baseline-xgboost"
+  version: "1.0.0"
+  type: "classification"
+  task: "debt_recovery_prediction"
+
+features:
+  - name: days_past_due
+    type: int
+    description: "Days since payment was due"
+  - name: outstanding_balance
+    type: float
+    description: "Current outstanding balance"
+  - name: payment_history_score
+    type: float
+    description: "Historical payment reliability (0-1)"
+  - name: contact_attempts
+    type: int
+    description: "Number of contact attempts made"
+  - name: last_payment_days_ago
+    type: int
+    description: "Days since last payment"
+  - name: account_age_months
+    type: int
+    description: "Age of the account in months"
+
+labels:
+  - recover
+  - escalate
+  - write_off
+  - monitor
+
+hyperparameters:
+  n_estimators: 100
+  max_depth: 6
+  learning_rate: 0.1
+  subsample: 0.8
+  colsample_bytree: 0.8
+  random_state: 42
+  eval_metric: "mlogloss"
+
+training:
+  test_size: 0.2
+  validation_size: 0.1
+  random_seed: 42
+  early_stopping_rounds: 10
+
+metrics:
+  primary: "f1_weighted"
+  secondary:
+    - accuracy
+    - precision_weighted
+    - recall_weighted
+    - roc_auc_ovr

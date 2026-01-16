@@ -1,0 +1,111 @@
+# Inflow AI - Local Development Stack
+# Usage: docker-compose -f docker-compose.dev.yml up
+
+version: "3.8"
+
+services:
+  # ==========================================================================
+  # Infrastructure
+  # ==========================================================================
+
+  redpanda:
+    image: redpandadata/redpanda:v23.3.5
+    container_name: inflow-redpanda
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --memory=512M
+      - --overprovisioned
+      - --node-id=0
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092
+    ports:
+      - "9092:9092"
+      - "9644:9644"
+    healthcheck:
+      test: [ "CMD", "rpk", "cluster", "health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+
+  # ==========================================================================
+  # Application Services
+  # ==========================================================================
+
+  ingestion:
+    build:
+      context: ./services/ingestion
+      dockerfile: Dockerfile
+    container_name: inflow-ingestion
+    ports:
+      - "8000:8000"
+    environment:
+      - LOG_LEVEL=INFO
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
+      - KAFKA_TOPIC=inflow-events
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  feature-service:
+    build:
+      context: ./services/feature-service
+      dockerfile: Dockerfile
+    container_name: inflow-feature-service
+    ports:
+      - "8002:8002"
+    environment:
+      - LOG_LEVEL=INFO
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8002/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  inference-service:
+    build:
+      context: ./services/inference-service
+      dockerfile: Dockerfile
+    container_name: inflow-inference-service
+    ports:
+      - "8001:8001"
+    environment:
+      - LOG_LEVEL=INFO
+      - MODEL_PATH=/models/baseline
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8001/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  decision-engine:
+    build:
+      context: ./services/decision-engine
+      dockerfile: Dockerfile
+    container_name: inflow-decision-engine
+    ports:
+      - "8003:8003"
+    environment:
+      - LOG_LEVEL=INFO
+      - CONFIDENCE_THRESHOLD=0.7
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8003/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  redpanda-data:
+
+
+networks:
+  default:
+    name: inflow-network
