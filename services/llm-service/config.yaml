@@ -1,0 +1,68 @@
+# LLM Service Configuration
+# CRITICAL: LLMs are ADVISORY ONLY - they never make final decisions
+
+service:
+  name: llm-service
+  version: "0.1.0"
+
+# Provider configuration
+providers:
+  primary:
+    name: openai
+    model: gpt-4-turbo-preview
+    api_key_vault_path: secret/prod/llm/openai
+  fallback:
+    name: anthropic
+    model: claude-3-sonnet
+    api_key_vault_path: secret/prod/llm/anthropic
+
+# Cost controls
+cost:
+  # Daily token limits
+  daily_token_limit: 1000000
+  hourly_token_limit: 100000
+  
+  # Per-request limits
+  max_input_tokens: 4000
+  max_output_tokens: 1000
+  
+  # Budget alerts
+  daily_budget_usd: 100.00
+  alert_threshold_percent: 80
+
+# Timeouts
+timeouts:
+  request_timeout_seconds: 30
+  connect_timeout_seconds: 5
+
+# Use cases (only these are allowed)
+allowed_use_cases:
+  - summarization
+  - explanation
+  - suggestion
+
+# Forbidden use cases (explicit deny list)
+forbidden_use_cases:
+  - decision_making
+  - action_execution
+  - data_modification
+
+# Safety rails
+safety:
+  require_human_review: false  # For suggestions
+  log_all_requests: true
+  log_all_responses: true
+  pii_filter_enabled: true
+  prompt_injection_detection: true
+
+# Fallback behavior
+fallback:
+  on_timeout: use_classical
+  on_error: use_classical
+  on_budget_exceeded: reject
+  classical_service: decision-engine
+
+# Prompt versioning
+prompts:
+  version: "v1"
+  directory: "/app/prompts"

@@ -1,0 +1,50 @@
+# Pod Disruption Budgets
+# Ensures minimum availability during updates/maintenance
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ingestion-pdb
+  labels:
+    app: ingestion
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ingestion
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: feature-service-pdb
+  labels:
+    app: feature-service
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: feature-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: inference-service-pdb
+  labels:
+    app: inference-service
+spec:
+  minAvailable: 2  # Higher for ML workloads
+  selector:
+    matchLabels:
+      app: inference-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: decision-engine-pdb
+  labels:
+    app: decision-engine
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: decision-engine

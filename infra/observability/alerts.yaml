@@ -1,0 +1,121 @@
+# Alert Rules
+# SLO-based alerting to avoid alert fatigue
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: inflow-alerts
+  labels:
+    app: inflow
+    type: alerts
+spec:
+  groups:
+    - name: inflow-critical
+      rules:
+        # Service down
+        - alert: ServiceDown
+          expr: up{job=~"inflow-.*"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Service {{ $labels.job }} is down"
+            runbook: "https://docs.inflow.ai/runbooks/service-down"
+        
+        # High error rate
+        - alert: HighErrorRate
+          expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High error rate on {{ $labels.app }}"
+            runbook: "https://docs.inflow.ai/runbooks/high-error-rate"
+        
+        # Pod crash loop
+        - alert: PodCrashLooping
+          expr: rate(kube_pod_container_status_restarts_total[15m]) > 0.5
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod {{ $labels.pod }} is crash looping"
+    
+    - name: inflow-warning
+      rules:
+        # High memory usage
+        - alert: HighMemoryUsage
+          expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.9
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory usage on {{ $labels.pod }}"
+        
+        # High CPU usage
+        - alert: HighCpuUsage
+          expr: rate(container_cpu_usage_seconds_total[5m]) > 0.9
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU usage on {{ $labels.pod }}"
+        
+        # Kafka consumer lag
+        - alert: KafkaConsumerLag
+          expr: kafka_consumer_lag > 1000
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Kafka consumer lag exceeds threshold"
+    
+    - name: inflow-ml
+      rules:
+        # Model performance degradation
+        - alert: ModelPerformanceDegradation
+          expr: model_accuracy < 0.85
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Model accuracy below threshold"
+            runbook: "https://docs.inflow.ai/runbooks/model-degradation"
+        
+        # Data drift detected
+        - alert: DataDriftDetected
+          expr: feature_drift_score > 0.2
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Data drift detected in features"
+        
+        # LLM service degraded
+        - alert: LLMServiceDegraded
+          expr: llm_fallback_rate > 0.2
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "LLM fallback rate exceeds 20%"
+    
+    - name: inflow-cost
+      rules:
+        # LLM cost spike
+        - alert: LLMCostSpike
+          expr: rate(llm_tokens_used[1h]) > 50000
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "LLM token usage spike detected"
+        
+        # Daily budget approaching
+        - alert: LLMDailyBudgetWarning
+          expr: llm_daily_tokens_used / llm_daily_token_limit > 0.8
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "LLM daily token budget at 80%"

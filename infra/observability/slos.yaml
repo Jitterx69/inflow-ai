@@ -1,0 +1,110 @@
+# SLO Definitions
+# Service Level Objectives for Inflow AI Platform
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: inflow-slos
+  labels:
+    app: inflow
+    type: slo
+spec:
+  groups:
+    - name: inflow-slos
+      rules:
+        # =============================================================================
+        # API Latency SLO: 99% of requests < 200ms
+        # =============================================================================
+        - record: slo:api_latency:ratio
+          expr: |
+            sum(rate(http_request_duration_seconds_bucket{le="0.2"}[5m]))
+            /
+            sum(rate(http_request_duration_seconds_count[5m]))
+        
+        - alert: SLOApiLatencyBreach
+          expr: slo:api_latency:ratio < 0.99
+          for: 5m
+          labels:
+            severity: warning
+            slo: api_latency
+          annotations:
+            summary: "API latency SLO breach"
+            description: "Less than 99% of API requests completing in under 200ms"
+        
+        # =============================================================================
+        # Inference Latency SLO: 99% of inferences < 100ms
+        # =============================================================================
+        - record: slo:inference_latency:ratio
+          expr: |
+            sum(rate(inference_duration_seconds_bucket{le="0.1"}[5m]))
+            /
+            sum(rate(inference_duration_seconds_count[5m]))
+        
+        - alert: SLOInferenceLatencyBreach
+          expr: slo:inference_latency:ratio < 0.99
+          for: 5m
+          labels:
+            severity: warning
+            slo: inference_latency
+          annotations:
+            summary: "Inference latency SLO breach"
+            description: "Less than 99% of inferences completing in under 100ms"
+        
+        # =============================================================================
+        # Error Rate SLO: < 0.1% error rate
+        # =============================================================================
+        - record: slo:error_rate:ratio
+          expr: |
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+        
+        - alert: SLOErrorRateBreach
+          expr: slo:error_rate:ratio > 0.001
+          for: 5m
+          labels:
+            severity: critical
+            slo: error_rate
+          annotations:
+            summary: "Error rate SLO breach"
+            description: "Error rate exceeds 0.1%"
+        
+        # =============================================================================
+        # Availability SLO: 99.9% availability
+        # =============================================================================
+        - record: slo:availability:ratio
+          expr: |
+            1 - (
+              sum(rate(http_requests_total{status=~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total[5m]))
+            )
+        
+        - alert: SLOAvailabilityBreach
+          expr: slo:availability:ratio < 0.999
+          for: 10m
+          labels:
+            severity: critical
+            slo: availability
+          annotations:
+            summary: "Availability SLO breach"
+            description: "Availability dropped below 99.9%"
+        
+        # =============================================================================
+        # Model Confidence SLO: < 10% low-confidence predictions
+        # =============================================================================
+        - record: slo:low_confidence:ratio
+          expr: |
+            sum(rate(model_predictions_total{confidence="low"}[5m]))
+            /
+            sum(rate(model_predictions_total[5m]))
+        
+        - alert: SLOLowConfidenceBreach
+          expr: slo:low_confidence:ratio > 0.1
+          for: 15m
+          labels:
+            severity: warning
+            slo: model_confidence
+          annotations:
+            summary: "Model confidence SLO breach"
+            description: "More than 10% of predictions have low confidence"

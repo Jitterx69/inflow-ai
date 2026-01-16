@@ -1,0 +1,86 @@
+# Production Environment Values
+# CRITICAL: This is production. Changes require approval.
+
+environment: prod
+namespace: inflow-prod
+
+# Replicas (production-grade)
+replicas:
+  ingestion: 3
+  feature-service: 3
+  inference-service: 3
+  decision-engine: 3
+
+# Resources (production-grade)
+resources:
+  default:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  inference:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 4000m
+      memory: 4Gi
+
+# Feature flags (all security enabled)
+features:
+  auth_required: true
+  mtls_enabled: true
+  rate_limiting: true
+  model_canary: true
+  circuit_breaker: true
+
+# Endpoints (production isolation)
+endpoints:
+  kafka: redpanda.inflow-prod.svc:9092
+  mlflow: mlflow.inflow-prod.svc:5000
+  feature_store: feast.inflow-prod.svc:6566
+  vault: vault.inflow-prod.svc:8200
+  redis: redis.inflow-prod.svc:6379
+
+# Model config (pinned versions only)
+model:
+  version: pinned  # MUST specify exact version
+  registry: mlflow
+  require_approval: true
+
+# Logging (production)
+logging:
+  level: WARN
+  format: json
+  include_trace_id: true
+
+# Monitoring (aggressive)
+monitoring:
+  enabled: true
+  scrape_interval: 10s
+  retention_days: 90
+
+# Security (maximum)
+security:
+  keycloak_realm: inflow-prod
+  vault_path: secret/prod
+  opa_enabled: true
+  network_policies: strict
+  pod_security_standard: restricted
+
+# SLOs
+slos:
+  api_latency_p99_ms: 200
+  inference_latency_p99_ms: 100
+  error_rate_percent: 0.1
+  availability_percent: 99.9
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  min_replicas: 3
+  max_replicas: 10
+  target_cpu_percent: 70
+  target_memory_percent: 80

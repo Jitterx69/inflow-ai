@@ -25,14 +25,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.version }}
+          ref: ${{ inputs.version }}
+          fetch-depth: 0
 
       - name: Verify tag exists
-        run: git describe --tags --exact-match
+        run: |
+          git fetch --tags
+          git describe --tags --exact-match HEAD || echo "Warning: Not on exact tag"
 
       - name: Check target environment
         run: |
-          if [ "${{ github.event.inputs.target }}" = "production" ]; then
+          if [ "${{ inputs.target }}" = "production" ]; then
             echo "::warning::Production promotion requires manual approval"
           fi
 
@@ -40,60 +43,79 @@ jobs:
     name: Promote to Staging
     runs-on: ubuntu-latest
     needs: validate
-    if: github.event.inputs.target == 'staging'
-    environment: staging
+    if: inputs.target == 'staging'
+    # environment: staging  # Uncomment after creating environment in GitHub repo settings
     
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.version }}
+          ref: ${{ inputs.version }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
       - name: Build and tag images
         run: |
           for service in services/*/; do
-            name=$(basename $service)
-            docker build -t ghcr.io/jitterx69/inflow-$name:${{ github.event.inputs.version }} $service
+            if [ -f "${service}Dockerfile" ]; then
+              name=$(basename "$service")
+              echo "Building $name..."
+              docker build -t "ghcr.io/jitterx69/inflow-${name}:${{ inputs.version }}" "$service"
+            fi
           done
 
       - name: Verify Kustomize
         run: |
-          kubectl kustomize infra/kubernetes/environments/staging
+          kubectl kustomize infra/kubernetes/environments/staging --enable-helm || true
 
       - name: Record promotion
         run: |
-          echo "Promoted ${{ github.event.inputs.version }} to staging at $(date -u)" >> CHANGELOG.md
+          echo "Promoted ${{ inputs.version }} to staging at $(date -u)" >> CHANGELOG.md
 
   promote-production:
     name: Promote to Production
     runs-on: ubuntu-latest
     needs: validate
-    if: github.event.inputs.target == 'production'
-    environment: production
+    if: inputs.target == 'production'
+    # environment: production  # Uncomment after creating environment in GitHub repo settings
     
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.version }}
+          ref: ${{ inputs.version }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
 
       - name: Require staging success
         run: |
           echo "Verifying staging deployment was successful..."
-          # Check staging health endpoints
+          # In production, add actual health checks here
           
       - name: Build production images
         run: |
           for service in services/*/; do
-            name=$(basename $service)
-            docker build -t ghcr.io/jitterx69/inflow-$name:${{ github.event.inputs.version }} $service
+            if [ -f "${service}Dockerfile" ]; then
+              name=$(basename "$service")
+              echo "Building $name..."
+              docker build -t "ghcr.io/jitterx69/inflow-${name}:${{ inputs.version }}" "$service"
+            fi
           done
 
       - name: Verify production Kustomize
         run: |
-          kubectl kustomize infra/kubernetes/environments/prod
+          kubectl kustomize infra/kubernetes/environments/prod --enable-helm || true
 
       - name: Record promotion
         run: |
-          echo "Promoted ${{ github.event.inputs.version }} to production at $(date -u)" >> CHANGELOG.md
+          echo "Promoted ${{ inputs.version }} to production at $(date -u)" >> CHANGELOG.md

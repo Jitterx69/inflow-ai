@@ -1,0 +1,142 @@
+# Chaos Testing Scenarios
+# Test system resilience under failure conditions
+
+scenarios:
+  # =============================================================================
+  # Service Failures
+  # =============================================================================
+  - name: inference_service_crash
+    description: "Kill inference service pods"
+    target:
+      kind: Deployment
+      name: inference-service
+    action:
+      type: pod-kill
+      mode: one  # Kill one pod
+    duration: 5m
+    expected:
+      - HPA scales up remaining pods
+      - Requests route to healthy pods
+      - No data loss
+      - Alert fires within 2 minutes
+    
+  - name: decision_engine_crash
+    description: "Kill all decision engine pods"
+    target:
+      kind: Deployment
+      name: decision-engine
+    action:
+      type: pod-kill
+      mode: all
+    duration: 2m
+    expected:
+      - Service unavailable briefly
+      - Automatic recovery via Kubernetes
+      - Alert fires immediately
+      - No cascading failures
+  
+  # =============================================================================
+  # Network Failures
+  # =============================================================================
+  - name: feature_service_network_partition
+    description: "Isolate feature service from network"
+    target:
+      kind: Deployment
+      name: feature-service
+    action:
+      type: network-partition
+      direction: both
+    duration: 3m
+    expected:
+      - Inference service uses cached features or defaults
+      - Circuit breaker triggers
+      - Feature lookups fail gracefully
+  
+  - name: kafka_connection_loss
+    description: "Block connections to Kafka"
+    target:
+      kind: Service
+      name: redpanda
+    action:
+      type: network-block
+      ports: [9092]
+    duration: 5m
+    expected:
+      - Ingestion service buffers locally
+      - No message loss
+      - Reconnection on recovery
+  
+  # =============================================================================
+  # Resource Exhaustion
+  # =============================================================================
+  - name: inference_memory_pressure
+    description: "Apply memory pressure to inference pods"
+    target:
+      kind: Deployment
+      name: inference-service
+    action:
+      type: stress-memory
+      workers: 2
+      size: 256M
+    duration: 5m
+    expected:
+      - OOM killer may trigger
+      - Pod restarts
+      - HPA scales if configured
+  
+  - name: cpu_stress_test
+    description: "Apply CPU stress to all services"
+    target:
+      kind: Namespace
+      name: inflow-prod
+    action:
+      type: stress-cpu
+      workers: 4
+      load: 80
+    duration: 10m
+    expected:
+      - Latency increases
+      - HPA triggers scaling
+      - No request drops
+  
+  # =============================================================================
+  # External Service Failures
+  # =============================================================================
+  - name: llm_provider_timeout
+    description: "Simulate LLM provider timeout"
+    target:
+      kind: Deployment
+      name: llm-service
+    action:
+      type: inject-fault
+      fault: timeout
+      delay: 35s  # Exceeds 30s timeout
+    duration: 10m
+    expected:
+      - Fallback to classical logic
+      - No user-facing errors
+      - LLM fallback rate increases
+  
+  - name: llm_provider_outage
+    description: "Simulate complete LLM provider outage"
+    target:
+      kind: Service
+      name: llm-external  # External LLM API
+    action:
+      type: network-block
+    duration: 30m
+    expected:
+      - All LLM calls use fallback
+      - System continues operating
+      - No decision-making impact
+
+# Execution configuration
+execution:
+  approval_required: true
+  notify_channels:
+    - "#platform-oncall"
+  schedule:
+    - cron: "0 3 * * 1"  # Mondays 3am
+      scenarios: [inference_service_crash, kafka_connection_loss]
+    - cron: "0 3 * * 3"  # Wednesdays 3am
+      scenarios: [llm_provider_timeout, cpu_stress_test]
