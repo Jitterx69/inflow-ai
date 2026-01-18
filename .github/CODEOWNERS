@@ -1,7 +1,10 @@
 # CODEOWNERS — Auto-assign reviewers based on file paths
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-# Platform & Infrastructure — @Jitterx69 (Mohit Ranjan)
+# GLOBAL OWNER - @Jitterx69 (Mohit Ranjan) must approve EVERYTHING.
+*                           @Jitterx69
+
+# Platform & Infrastructure
 /infra/                     @Jitterx69
 /.github/                   @Jitterx69
 
@@ -11,8 +14,5 @@
 # Services Domain
 /services/                  @Jitterx69
 
-# Platform Domain
-/platform/                  @Jitterx69
-
-# Documentation requires platform review
+# Documentation
 /docs/                      @Jitterx69
