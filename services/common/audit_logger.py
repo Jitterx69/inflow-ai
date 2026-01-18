@@ -9,7 +9,7 @@ import json
 import hashlib
 import logging
 from datetime import datetime
-from typing import Optional, Any
+from typing import Optional
 from dataclasses import dataclass, asdict
 
 logging.basicConfig(level=logging.INFO)

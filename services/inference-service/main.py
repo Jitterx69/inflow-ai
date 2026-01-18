@@ -5,7 +5,6 @@ Serves ML model predictions.
 
 import os
 import logging
-import random
 from datetime import datetime
 from contextlib import asynccontextmanager
 

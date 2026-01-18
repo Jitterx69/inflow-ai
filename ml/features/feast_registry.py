@@ -3,12 +3,10 @@ Feast Registry Manager
 Handles feature store operations.
 """
 
-import os
 import logging
 from pathlib import Path
 
 from feast import FeatureStore
-from feast.repo_config import load_repo_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

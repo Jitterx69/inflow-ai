@@ -7,7 +7,7 @@ import time
 import logging
 import threading
 from enum import Enum
-from typing import Callable, Any, Optional
+from typing import Callable, Optional
 from functools import wraps
 
 logging.basicConfig(level=logging.INFO)
@@ -103,7 +103,7 @@ class CircuitBreaker:
                 result = func(*args, **kwargs)
                 self.record_success()
                 return result
-            except Exception as e:
+            except Exception:
                 self.record_failure()
                 raise
         

@@ -4,14 +4,11 @@ CRITICAL: LLMs are ADVISORY ONLY - they NEVER make final decisions.
 """
 
 import os
-import json
 import logging
-import time
 from datetime import datetime, date
 from contextlib import asynccontextmanager
 from typing import Optional
 
-import yaml
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -147,9 +144,9 @@ class LLMClient:
         if use_case == "summarization":
             response = f"Summary: Based on the provided context about {context[:50]}..., the key points are: 1) Account status overview, 2) Payment history analysis, 3) Recommended next steps."
         elif use_case == "explanation":
-            response = f"Explanation: The model prediction is based on several factors: days past due, outstanding balance, and payment history. The primary driver is the payment history score."
+            response = "Explanation: The model prediction is based on several factors: days past due, outstanding balance, and payment history. The primary driver is the payment history score."
         else:  # suggestion
-            response = f"Suggestion (ADVISORY ONLY): Based on the analysis, consider reaching out to the customer within the next 48 hours. Note: This is a suggestion only - final decision requires human review."
+            response = "Suggestion (ADVISORY ONLY): Based on the analysis, consider reaching out to the customer within the next 48 hours. Note: This is a suggestion only - final decision requires human review."
         
         tokens_used = len(response.split()) * 2  # Rough estimate
         
