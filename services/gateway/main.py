@@ -1,3 +1,4 @@
+# Gateway Service Entry Point
 from fastapi import FastAPI, Request, HTTPException, Response, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import secrets
