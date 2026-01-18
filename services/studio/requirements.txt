@@ -4,3 +4,4 @@ sqlalchemy
 asyncpg
 pydantic
 confluent-kafka
+boto3

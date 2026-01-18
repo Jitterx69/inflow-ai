@@ -8,9 +8,11 @@ import json
 from datetime import datetime
 from pydantic import BaseModel
 from confluent_kafka import Producer
+import boto3
+from botocore.exceptions import ClientError
 
 from .database import get_db, engine, Base
-from .models import Draft, DraftStatus
+from .models import Draft, DraftStatus, Asset
 
 # --- Kafka Setup ---
 producer_conf = {'bootstrap.servers': os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")}
@@ -24,6 +26,25 @@ def delivery_report(err, msg):
         print(f"Message delivery failed: {err}")
     else:
         print(f"Message delivered to {msg.topic()} [{msg.partition()}]")
+
+# --- S3 Setup ---
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "inflow-assets-dev")
+CDN_DOMAIN = os.getenv("CDN_DOMAIN") # e.g. https://cdn.inflow.ai
+AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
+
+s3_client = boto3.client(
+    "s3",
+    region_name=AWS_REGION,
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+)
+
+ALLOWED_MIME_TYPES = {
+    "image/jpeg", "image/png", "image/gif", "image/webp",
+    "video/mp4", "video/quicktime", "video/webm"
+}
+
+
 
 
 app = FastAPI(title="Creator Studio Service")
@@ -54,6 +75,19 @@ class FeedbackRequest(BaseModel):
     draft_id: str
     action: str
     diff: str
+
+class AssetUploadRequest(BaseModel):
+    creator_id: str
+    filename: str
+    content_type: str
+
+class AssetUploadResponse(BaseModel):
+    upload_url: str
+    fields: dict
+    asset_id: uuid.UUID
+    asset_url: str
+
+
 
 
 # --- Lifecycle ---
@@ -144,4 +178,68 @@ async def submit_feedback(feedback: FeedbackRequest):
         producer.poll(0)
         return {"status": "received"}
     return {"status": "received (kafka unavailable)"}
+
+@app.post("/assets/upload-url", response_model=AssetUploadResponse)
+async def generate_upload_url(request: AssetUploadRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Generate a secure Presigned POST URL for S3 upload.
+    Enforces content-type and size limits (500MB).
+    """
+    if request.content_type not in ALLOWED_MIME_TYPES:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid content type. Allowed: {ALLOWED_MIME_TYPES}"
+        )
+
+    # 1. Generate unique object key
+    file_ext = request.filename.split('.')[-1] if '.' in request.filename else "bin"
+    object_key = f"uploads/{request.creator_id}/{uuid.uuid4()}.{file_ext}"
+
+    # 2. Determine Public URL (CDN or S3)
+    if CDN_DOMAIN:
+        # If CDN_DOMAIN doesn't start with http, assume https
+        base = CDN_DOMAIN if CDN_DOMAIN.startswith("http") else f"https://{CDN_DOMAIN}"
+        public_url = f"{base}/{object_key}"
+    else:
+        public_url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{object_key}"
+
+    try:
+        # 3. Generate Presigned POST (Policy Enforced)
+        # Allows implementing file size limits and strict content-type
+        presigned_data = s3_client.generate_presigned_post(
+            Bucket=S3_BUCKET_NAME,
+            Key=object_key,
+            Fields={
+                'Content-Type': request.content_type,
+                'acl': 'public-read' # Optional: make it public or private based on bucket policy
+            },
+            Conditions=[
+                {'Content-Type': request.content_type},
+                {'acl': 'public-read'},
+                ['content-length-range', 1024, 524288000] # 1KB to 500MB
+            ],
+            ExpiresIn=3600
+        )
+    except ClientError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # 4. Create Asset Record in DB
+    new_asset = Asset(
+        creator_id=request.creator_id,
+        s3_key=object_key,
+        url=public_url,
+        mime_type=request.content_type
+    )
+    db.add(new_asset)
+    await db.commit()
+    await db.refresh(new_asset)
+        
+    return AssetUploadResponse(
+        upload_url=presigned_data['url'],
+        fields=presigned_data['fields'],
+        asset_id=new_asset.id,
+        asset_url=public_url
+    )
+
+
 
