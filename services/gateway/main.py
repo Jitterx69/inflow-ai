@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, HTTPException, Response, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import secrets
+from fastapi import FastAPI, Request, HTTPException, Response
 import httpx
 import os
 
@@ -79,6 +80,11 @@ async def studio_proxy(path: str, request: Request):
     return await reverse_proxy(STUDIO_URL, request)
 
 @app.post("/api/v1/analyze", dependencies=[Depends(verify_credentials)])
+@app.api_route("/api/v1/studio/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+async def studio_proxy(path: str, request: Request):
+    return await reverse_proxy(STUDIO_URL, request)
+
+@app.post("/api/v1/analyze")
 async def analyze_proxy(request: Request):
     return await reverse_proxy(ORCHESTRATOR_URL, request)
 
