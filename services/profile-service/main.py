@@ -4,13 +4,12 @@ Privacy-first design with explainable, erasable memory.
 """
 
 import os
-import json
 import logging
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
 
 logging.basicConfig(

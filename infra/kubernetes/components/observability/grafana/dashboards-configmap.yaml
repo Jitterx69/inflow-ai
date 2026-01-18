@@ -12,7 +12,7 @@ data:
         type: file
         options:
           path: /var/lib/grafana/dashboards
-  
+
   inflow-overview.json: |
     {
       "title": "Inflow AI Overview",

@@ -45,7 +45,7 @@ jobs:
     needs: validate
     if: inputs.target == 'staging'
     # environment: staging  # Uncomment after creating environment in GitHub repo settings
-    
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -83,7 +83,7 @@ jobs:
     needs: validate
     if: inputs.target == 'production'
     # environment: production  # Uncomment after creating environment in GitHub repo settings
-    
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -101,7 +101,7 @@ jobs:
         run: |
           echo "Verifying staging deployment was successful..."
           # In production, add actual health checks here
-          
+
       - name: Build production images
         run: |
           for service in services/*/; do

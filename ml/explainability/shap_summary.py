@@ -26,7 +26,7 @@ def load_model():
     metadata_path = MODEL_DIR / "metadata.json"
     
     if not model_path.exists():
-        raise FileNotFoundError(f"Model not found. Run training first.")
+        raise FileNotFoundError("Model not found. Run training first.")
     
     model = xgb.Booster()
     model.load_model(str(model_path))
@@ -59,7 +59,8 @@ def compute_shap_values(model, X: pd.DataFrame, feature_names: list) -> tuple:
         (explainer, shap_values)
     """
     # Create DMatrix
-    dmatrix = xgb.DMatrix(X, feature_names=feature_names)
+    # Create DMatrix
+    _ = xgb.DMatrix(X, feature_names=feature_names)
     
     # Create SHAP explainer
     explainer = shap.TreeExplainer(model)

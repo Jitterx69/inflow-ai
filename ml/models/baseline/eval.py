@@ -79,9 +79,9 @@ def evaluate(model, metadata: dict, df: pd.DataFrame) -> dict:
     X = df[feature_names]
     y_true = df['label']
     
-    # Convert labels to indices
-    label_to_idx = {label: idx for idx, label in enumerate(label_classes)}
-    y_true_idx = [label_to_idx[label] for label in y_true]
+    # labels to indices conversion unused
+
+
     
     # Predict
     dtest = xgb.DMatrix(X, feature_names=feature_names)

@@ -12,7 +12,7 @@ spec:
     maxReplicas: 3
     scaleTarget: 80
     scaleMetric: concurrency
-    
+
     # XGBoost runtime
     xgboost:
       storageUri: "s3://models/baseline/v1"
@@ -24,10 +24,10 @@ spec:
         limits:
           cpu: 1000m
           memory: 1Gi
-      
+
     # Canary configuration
     canaryTrafficPercent: 0
-    
+
   transformer:
     minReplicas: 1
     containers:
@@ -54,7 +54,7 @@ spec:
   predictor:
     minReplicas: 1
     maxReplicas: 1
-    
+
     xgboost:
       storageUri: "s3://models/baseline/canary"
       runtimeVersion: "v0.8.0"

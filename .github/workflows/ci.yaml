@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install linters
         run: |
@@ -36,8 +36,8 @@ jobs:
           fi
 
       - name: Lint YAML
-        run: yamllint -d "{extends: relaxed, rules: {line-length: {max: 200}}}" .
-        continue-on-error: true
+        run: |
+          yamllint -d "{extends: relaxed, rules: {line-length: {max: 200}}}" .
 
       - name: Check for secrets
         run: |
@@ -55,17 +55,21 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install OpenAPI linter
         run: npm install -g @stoplight/spectral-cli
 
       - name: Validate OpenAPI specs
         run: |
-          for spec in docs/api-contracts/*.yaml; do
-            echo "Validating $spec..."
-            spectral lint "$spec" --ruleset=https://raw.githubusercontent.com/stoplightio/spectral/develop/rulesets/src/oas/.spectral.json || true
-          done
+          if ls docs/api-contracts/*.yaml >/dev/null 2>&1; then
+            for spec in docs/api-contracts/*.yaml; do
+              echo "Validating $spec..."
+              spectral lint "$spec"
+            done
+          else
+             echo "No OpenAPI specs found."
+          fi
 
       - name: Validate Proto files
         run: |
@@ -86,7 +90,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -115,7 +119,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install ML dependencies
         run: |

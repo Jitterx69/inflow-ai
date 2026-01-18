@@ -4,15 +4,11 @@ Manages model versioning, promotion, and rollback.
 """
 
 import os
-import json
 import logging
-from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
 import mlflow
 from mlflow.tracking import MlflowClient
-from mlflow.models import infer_signature
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
