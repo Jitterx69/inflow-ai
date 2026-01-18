@@ -4,12 +4,12 @@
 thresholds:
   # Minimum confidence to auto-execute decision
   auto_execute: 0.85
-  
+
   # Confidence range requiring human review
   human_review:
     min: 0.5
     max: 0.85
-  
+
   # Below this, route to manual queue
   manual_queue: 0.5
 

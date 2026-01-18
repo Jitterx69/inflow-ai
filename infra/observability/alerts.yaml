@@ -21,7 +21,7 @@ spec:
           annotations:
             summary: "Service {{ $labels.job }} is down"
             runbook: "https://docs.inflow.ai/runbooks/service-down"
-        
+
         # High error rate
         - alert: HighErrorRate
           expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
@@ -31,7 +31,7 @@ spec:
           annotations:
             summary: "High error rate on {{ $labels.app }}"
             runbook: "https://docs.inflow.ai/runbooks/high-error-rate"
-        
+
         # Pod crash loop
         - alert: PodCrashLooping
           expr: rate(kube_pod_container_status_restarts_total[15m]) > 0.5
@@ -40,7 +40,7 @@ spec:
             severity: critical
           annotations:
             summary: "Pod {{ $labels.pod }} is crash looping"
-    
+
     - name: inflow-warning
       rules:
         # High memory usage
@@ -51,7 +51,7 @@ spec:
             severity: warning
           annotations:
             summary: "High memory usage on {{ $labels.pod }}"
-        
+
         # High CPU usage
         - alert: HighCpuUsage
           expr: rate(container_cpu_usage_seconds_total[5m]) > 0.9
@@ -60,7 +60,7 @@ spec:
             severity: warning
           annotations:
             summary: "High CPU usage on {{ $labels.pod }}"
-        
+
         # Kafka consumer lag
         - alert: KafkaConsumerLag
           expr: kafka_consumer_lag > 1000
@@ -69,7 +69,7 @@ spec:
             severity: warning
           annotations:
             summary: "Kafka consumer lag exceeds threshold"
-    
+
     - name: inflow-ml
       rules:
         # Model performance degradation
@@ -81,7 +81,7 @@ spec:
           annotations:
             summary: "Model accuracy below threshold"
             runbook: "https://docs.inflow.ai/runbooks/model-degradation"
-        
+
         # Data drift detected
         - alert: DataDriftDetected
           expr: feature_drift_score > 0.2
@@ -90,7 +90,7 @@ spec:
             severity: warning
           annotations:
             summary: "Data drift detected in features"
-        
+
         # LLM service degraded
         - alert: LLMServiceDegraded
           expr: llm_fallback_rate > 0.2
@@ -99,7 +99,7 @@ spec:
             severity: warning
           annotations:
             summary: "LLM fallback rate exceeds 20%"
-    
+
     - name: inflow-cost
       rules:
         # LLM cost spike
@@ -110,7 +110,7 @@ spec:
             severity: warning
           annotations:
             summary: "LLM token usage spike detected"
-        
+
         # Daily budget approaching
         - alert: LLMDailyBudgetWarning
           expr: llm_daily_tokens_used / llm_daily_token_limit > 0.8

@@ -19,7 +19,7 @@ scenarios:
       - Requests route to healthy pods
       - No data loss
       - Alert fires within 2 minutes
-    
+
   - name: decision_engine_crash
     description: "Kill all decision engine pods"
     target:
@@ -34,7 +34,7 @@ scenarios:
       - Automatic recovery via Kubernetes
       - Alert fires immediately
       - No cascading failures
-  
+
   # =============================================================================
   # Network Failures
   # =============================================================================
@@ -51,7 +51,7 @@ scenarios:
       - Inference service uses cached features or defaults
       - Circuit breaker triggers
       - Feature lookups fail gracefully
-  
+
   - name: kafka_connection_loss
     description: "Block connections to Kafka"
     target:
@@ -65,7 +65,7 @@ scenarios:
       - Ingestion service buffers locally
       - No message loss
       - Reconnection on recovery
-  
+
   # =============================================================================
   # Resource Exhaustion
   # =============================================================================
@@ -83,7 +83,7 @@ scenarios:
       - OOM killer may trigger
       - Pod restarts
       - HPA scales if configured
-  
+
   - name: cpu_stress_test
     description: "Apply CPU stress to all services"
     target:
@@ -98,7 +98,7 @@ scenarios:
       - Latency increases
       - HPA triggers scaling
       - No request drops
-  
+
   # =============================================================================
   # External Service Failures
   # =============================================================================
@@ -116,7 +116,7 @@ scenarios:
       - Fallback to classical logic
       - No user-facing errors
       - LLM fallback rate increases
-  
+
   - name: llm_provider_outage
     description: "Simulate complete LLM provider outage"
     target:

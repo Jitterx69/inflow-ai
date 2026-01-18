@@ -20,7 +20,7 @@ spec:
             sum(rate(http_request_duration_seconds_bucket{le="0.2"}[5m]))
             /
             sum(rate(http_request_duration_seconds_count[5m]))
-        
+
         - alert: SLOApiLatencyBreach
           expr: slo:api_latency:ratio < 0.99
           for: 5m
@@ -30,7 +30,7 @@ spec:
           annotations:
             summary: "API latency SLO breach"
             description: "Less than 99% of API requests completing in under 200ms"
-        
+
         # =============================================================================
         # Inference Latency SLO: 99% of inferences < 100ms
         # =============================================================================
@@ -39,7 +39,7 @@ spec:
             sum(rate(inference_duration_seconds_bucket{le="0.1"}[5m]))
             /
             sum(rate(inference_duration_seconds_count[5m]))
-        
+
         - alert: SLOInferenceLatencyBreach
           expr: slo:inference_latency:ratio < 0.99
           for: 5m
@@ -49,7 +49,7 @@ spec:
           annotations:
             summary: "Inference latency SLO breach"
             description: "Less than 99% of inferences completing in under 100ms"
-        
+
         # =============================================================================
         # Error Rate SLO: < 0.1% error rate
         # =============================================================================
@@ -58,7 +58,7 @@ spec:
             sum(rate(http_requests_total{status=~"5.."}[5m]))
             /
             sum(rate(http_requests_total[5m]))
-        
+
         - alert: SLOErrorRateBreach
           expr: slo:error_rate:ratio > 0.001
           for: 5m
@@ -68,7 +68,7 @@ spec:
           annotations:
             summary: "Error rate SLO breach"
             description: "Error rate exceeds 0.1%"
-        
+
         # =============================================================================
         # Availability SLO: 99.9% availability
         # =============================================================================
@@ -79,7 +79,7 @@ spec:
               /
               sum(rate(http_requests_total[5m]))
             )
-        
+
         - alert: SLOAvailabilityBreach
           expr: slo:availability:ratio < 0.999
           for: 10m
@@ -89,7 +89,7 @@ spec:
           annotations:
             summary: "Availability SLO breach"
             description: "Availability dropped below 99.9%"
-        
+
         # =============================================================================
         # Model Confidence SLO: < 10% low-confidence predictions
         # =============================================================================
@@ -98,7 +98,7 @@ spec:
             sum(rate(model_predictions_total{confidence="low"}[5m]))
             /
             sum(rate(model_predictions_total[5m]))
-        
+
         - alert: SLOLowConfidenceBreach
           expr: slo:low_confidence:ratio > 0.1
           for: 15m

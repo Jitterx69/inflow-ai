@@ -21,11 +21,11 @@ cost:
   # Daily token limits
   daily_token_limit: 1000000
   hourly_token_limit: 100000
-  
+
   # Per-request limits
   max_input_tokens: 4000
   max_output_tokens: 1000
-  
+
   # Budget alerts
   daily_budget_usd: 100.00
   alert_threshold_percent: 80

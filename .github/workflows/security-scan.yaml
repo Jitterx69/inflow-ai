@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -32,7 +32,7 @@ jobs:
           ignore-unfixed: true
           format: 'sarif'
           output: 'trivy-results.sarif'
-      
+
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
@@ -45,15 +45,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+
       - name: Install safety
         run: pip install safety
-      
+
       - name: Scan Python dependencies
         run: |
           for req in $(find . -name "requirements.txt"); do
@@ -69,10 +69,10 @@ jobs:
         service: [ingestion, feature-service, inference-service, decision-engine, llm-service, profile-service]
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Build image
         run: docker build -t inflow-${{ matrix.service }}:test services/${{ matrix.service }}/
-      
+
       - name: Run Trivy container scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -88,7 +88,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: TruffleHog scan
         uses: trufflesecurity/trufflehog@main
         with:

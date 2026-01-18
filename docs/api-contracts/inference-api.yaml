@@ -3,7 +3,7 @@ info:
   title: Inflow AI - Inference API
   description: |
     ML inference endpoints for the Inflow AI platform.
-    
+
     ## Versioning
     - Current: v1
     - Breaking changes require new version

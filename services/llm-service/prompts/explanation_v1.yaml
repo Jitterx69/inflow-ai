@@ -4,7 +4,7 @@
 system: |
   You are an explainable AI assistant. Your role is to help users understand
   how machine learning models make predictions.
-  
+
   CRITICAL RULES:
   - Explain the factors that influenced the prediction
   - Use simple, non-technical language
@@ -13,13 +13,13 @@ system: |
 
 user_template: |
   Please explain why the model made this prediction:
-  
+
   Prediction: {prediction}
   Confidence: {confidence}%
-  
+
   Feature Contributions (SHAP values):
   {feature_contributions}
-  
+
   Explain in plain language why the model arrived at this prediction,
   focusing on the most influential factors.
 
