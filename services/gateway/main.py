@@ -1,8 +1,27 @@
-from fastapi import FastAPI, Request, HTTPException, Response
+from fastapi import FastAPI, Request, HTTPException, Response, Depends
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+import secrets
 import httpx
 import os
 
 app = FastAPI(title="API Gateway")
+security = HTTPBasic()
+
+# Mock Credentials (in real app, use auth service or db)
+USERNAME = os.getenv("AUTH_USER", "admin")
+PASSWORD = os.getenv("AUTH_PASS", "secret")
+
+def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
+    is_correct_username = secrets.compare_digest(credentials.username, USERNAME)
+    is_correct_password = secrets.compare_digest(credentials.password, PASSWORD)
+    if not (is_correct_username and is_correct_password):
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials
+
 
 # Service URLs (Env vars with defaults for local dev)
 STUDIO_URL = os.getenv("STUDIO_URL", "http://localhost:8001")
@@ -55,11 +74,11 @@ async def reverse_proxy(target_url: str, request: Request):
 
 # --- Routes ---
 
-@app.api_route("/api/v1/studio/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+@app.api_route("/api/v1/studio/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], dependencies=[Depends(verify_credentials)])
 async def studio_proxy(path: str, request: Request):
     return await reverse_proxy(STUDIO_URL, request)
 
-@app.post("/api/v1/analyze")
+@app.post("/api/v1/analyze", dependencies=[Depends(verify_credentials)])
 async def analyze_proxy(request: Request):
     return await reverse_proxy(ORCHESTRATOR_URL, request)
 

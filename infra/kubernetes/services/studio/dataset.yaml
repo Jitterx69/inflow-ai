@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: studio
+  labels:
+    app: studio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: studio
+  template:
+    metadata:
+      labels:
+        app: studio
+    spec:
+      containers:
+        - name: studio
+          image: studio:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://user:password@postgres:5432/studio_db"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: studio
+spec:
+  selector:
+    app: studio
+  ports:
+    - port: 8000
+      targetPort: 8000
