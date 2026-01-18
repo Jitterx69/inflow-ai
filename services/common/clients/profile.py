@@ -1,5 +1,5 @@
 import httpx
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 class ProfileServiceError(Exception):
     """Base exception for profile service errors."""

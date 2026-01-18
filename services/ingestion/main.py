@@ -7,6 +7,8 @@ import os
 import logging
 from datetime import datetime
 from contextlib import asynccontextmanager
+from confluent_kafka import Producer
+import json
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -18,8 +20,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-from confluent_kafka import Producer
-import json
+
 
 
 # Initialize Producer (Global for simplicity, or in lifespan)

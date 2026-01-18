@@ -1,12 +1,12 @@
 import json
 import logging
 import datetime
-from typing import Optional
+
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import Column, String, DateTime, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from confluent_kafka import Consumer, KafkaError, KafkaException
+from confluent_kafka import Consumer, KafkaError
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
