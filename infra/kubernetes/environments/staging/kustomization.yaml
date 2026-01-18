@@ -5,6 +5,10 @@ kind: Kustomization
 namespace: inflow-staging
 
 resources:
+  - ../../services/studio/dataset.yaml
+  - ../../services/orchestrator/dataset.yaml
+  - ../../services/gateway/dataset.yaml
+
   - ../../base/namespaces.yaml
   - ../../base/resource-quotas.yaml
   - ../../base/network-policies.yaml
