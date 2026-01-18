@@ -18,6 +18,26 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+from confluent_kafka import Producer
+import json
+
+
+# Initialize Producer (Global for simplicity, or in lifespan)
+producer_conf = {'bootstrap.servers': os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")}
+# In real app, producer should be created in lifespan
+try:
+    producer = Producer(producer_conf)
+except Exception as e:
+    logger.error(f"Failed to create producer: {e}")
+    producer = None
+
+def delivery_report(err, msg):
+    if err is not None:
+        logger.error(f"Message delivery failed: {err}")
+    else:
+        logger.debug(f"Message delivered to {msg.topic()} [{msg.partition()}]")
+
+
 
 # =============================================================================
 # Configuration (env vars only)
@@ -124,6 +144,38 @@ async def ingest_batch(events: list[IngestEvent]):
         "processed": 0,
         "message": "Batch received (stub - not processed)"
     }
+
+
+@app.post("/webhooks/instagram")
+async def instagram_webhook(request: dict, x_hub_signature: str | None = None):
+    """
+    Receives Instagram webhooks.
+    """
+    # 1. Signature Verification (Simplified Stub)
+    # In reality: hmac.new(app_secret, request_body, hashlib.sha256)
+    if not x_hub_signature and os.getenv("ENV") == "prod":
+        logger.warning("Missing signature")
+        # raise HTTPException(403, "Missing signature")
+    
+    logger.info(f"Received Instagram webhook: {request}")
+
+    # 2. Push to Kafka
+    if producer:
+        try:
+            producer.produce(
+                "raw.social.events",
+                key=str(request.get("object", "instagram")),
+                value=json.dumps(request),
+                callback=delivery_report
+            )
+            producer.poll(0)
+            return {"status": "accepted"}
+        except Exception as e:
+            logger.error(f"Failed to produce to Kafka: {e}")
+            return {"status": "error", "detail": str(e)}
+    
+    return {"status": "accepted (kafka unavailable)"}
+
 
 
 if __name__ == "__main__":

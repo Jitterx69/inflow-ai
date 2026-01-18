@@ -3,15 +3,19 @@
 
 name: Promote
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to promote (e.g., v1.0.0)'
+        description: "Version to promote (e.g., v1.0.0)"
         required: true
         type: string
       target:
-        description: 'Target environment'
+        description: "Target environment"
         required: true
         type: choice
         options:
@@ -31,7 +35,10 @@ jobs:
       - name: Verify tag exists
         run: |
           git fetch --tags
-          git describe --tags --exact-match HEAD || echo "Warning: Not on exact tag"
+          if ! git describe --tags --exact-match HEAD; then
+            echo "Error: Current commit is not tagged"
+            exit 1
+          fi
 
       - name: Check target environment
         run: |
@@ -57,12 +64,12 @@ jobs:
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'latest'
+          version: "latest"
 
       - name: Build and tag images
         run: |
           for service in services/*/; do
-            if [ -f "${service}Dockerfile" ]; then
+            if [ -f "${service}/Dockerfile" ]; then
               name=$(basename "$service")
               echo "Building $name..."
               docker build -t "ghcr.io/jitterx69/inflow-${name}:${{ inputs.version }}" "$service"
@@ -95,7 +102,7 @@ jobs:
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'latest'
+          version: "latest"
 
       - name: Require staging success
         run: |
@@ -105,7 +112,7 @@ jobs:
       - name: Build production images
         run: |
           for service in services/*/; do
-            if [ -f "${service}Dockerfile" ]; then
+            if [ -f "${service}/Dockerfile" ]; then
               name=$(basename "$service")
               echo "Building $name..."
               docker build -t "ghcr.io/jitterx69/inflow-${name}:${{ inputs.version }}" "$service"
