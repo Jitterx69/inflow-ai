@@ -18,3 +18,14 @@ class Draft(Base):
     content = Column(JSON, nullable=True)
     scheduled_time = Column(DateTime, nullable=True)
     last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Asset(Base):
+    __tablename__ = "assets"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    creator_id = Column(String, index=True, nullable=False)
+    s3_key = Column(String, nullable=False)
+    url = Column(String, nullable=False)
+    mime_type = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
