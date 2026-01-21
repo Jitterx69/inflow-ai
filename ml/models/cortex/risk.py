@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 class RiskAssessment(BaseModel):
     is_safe: bool
