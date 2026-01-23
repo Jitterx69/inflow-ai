@@ -1,6 +1,6 @@
-import pytest
+
 import json
-from ml.models.governance import ReasoningTrace, AuditLogger, AuditEvent
+from ml.models.governance import ReasoningTrace, AuditLogger
 
 def test_reasoning_trace():
     trace = ReasoningTrace("RiskCheck")

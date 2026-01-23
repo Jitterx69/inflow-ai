@@ -22,6 +22,7 @@ class RiskEngine:
             "guaranteed returns": 0.8,
             "crypto gem": 0.6,
             "hate": 0.9,
+            "gamble": 0.8,
         }
 
     def assess_risk(self, content: str, creator_prefs: Dict[str, Any]) -> RiskAssessment:

@@ -26,7 +26,7 @@ def verify_cortex():
     result_safe = orchestrator.create_content(idea_safe, creator_tech)
     
     if result_safe:
-        print(f"Result: Success")
+        print("Result: Success")
         print(f"Risk Safe: {result_safe.risk_assessment.is_safe}")
         print(f"Viability Score (from trace): {find_trace_output(result_safe, 'Cortex Viability', 'viability_score')}")
     else:
