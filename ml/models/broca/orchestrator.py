@@ -40,7 +40,7 @@ class Orchestrator:
         if tone == "Professional":
             msg = "Use formal language"
             constraints.append(msg)
-            setup_trace.add_reason(f"Applied 'formal language' constraint based on Professional tone")
+            setup_trace.add_reason("Applied 'formal language' constraint based on Professional tone")
         
         traces.append(setup_trace)
         
